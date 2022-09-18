@@ -2,20 +2,28 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Stack;
 
+/**
+ * Handles a game of Secret Hitler
+ */
 public class Game {
 
-    public LinkedList<Player> players;
-    public Stack<Policy> deck;
-    public Stack<Policy> discard;
-    public Stack<Policy> liberalPolicies;
-    public Stack<Policy> fascistPolicies;
+    public LinkedList<Player> players;      //List of alive players
+    public Stack<Policy> deck;              //Deck of policies
+    public Stack<Policy> discard;           //Discard for policies
+    public Stack<Policy> liberalPolicies;   //Played liberal policies
+    public Stack<Policy> fascistPolicies;   //Played fascist policies
 
-    public Player chancellor;
-    public Player president;
+    public Player chancellor;               //Current chancellor
+    public Player president;                //Current president
 
-    public boolean vetoPower;
-    public int numRounds;
+    public boolean vetoPower;               //If veto power has been enabled
+    public int numRounds;                   //Number of rounds passed
+    private int numFailed;                  //Number of rounds without a played policy
+    private boolean presidentPicks;         //If the president selects the next president
 
+    /**
+     * Constructor
+     */
     public Game()
     {
         players = new LinkedList<Player>();
@@ -24,6 +32,8 @@ public class Game {
         liberalPolicies = new Stack<Policy>();
         fascistPolicies = new Stack<Policy>();
         numRounds = 0;
+        numFailed = 0;
+        presidentPicks = false;
 
         for(int i = 0; i < 4; i++) {
             players.add(new Liberal(this));
@@ -51,48 +61,102 @@ public class Game {
     }
 
 
-    //TODO add in voting for pres/chancellor combo
+    /**
+     * Handles a round, runs recursively until a win condition is met
+     *
+     * @return true if the liberals win, false if the fascists win
+     */
     public boolean round() {
         numRounds++;
 
-        if(fascistPolicies.size() != 3) {
+        //Rotate the president unless the previous president already picked the new president
+        if(!presidentPicks) {
             int newIndex = (president.getPlayerIndex() + 1) % players.size();
             president = players.get(newIndex);
+        }
+        else {
+            presidentPicks = false;
         }
 
         chancellor = players.get(president.choseChancellor());
 
-        if(fascistPolicies.size() > 3 && chancellor.role.val) {
-            return false;
+        //Each player votes
+        int numYes = 0;
+        for(Player player : players) {
+            if(player.vote(president, chancellor)) {
+                numYes++;
+            }
         }
-        LinkedList<Policy> policies = president.draw();
-        Policy played = chancellor.play(policies);
 
-        if(!vetoPower || president.veto(played)) {
-            if (played.val) {
-                liberalPolicies.push(played);
-            } else {
-                fascistPolicies.push(played);
+        //If the president/chancellor combo was voted up
+        if((double) numYes / (double) players.size() > .5) {
 
-                if (fascistPolicies.size() == 2) {
-                    president.investigate();
-                } else if (fascistPolicies.size() == 3) {
-                    president = players.get(president.chosePresident());
-                } else if (fascistPolicies.size() == 4) {
-                    president.shoot();
-                } else if (fascistPolicies.size() == 5) {
-                    president.shoot();
-                    vetoPower = true;
-                } else if (fascistPolicies.size() == 6) {
-                    return false;
+            //If Hitler is elected chancellor after 3 fascist policies have been played, the fascists win
+            if(fascistPolicies.size() > 3 && chancellor.role.isHitler) {
+                return false;
+            }
+
+            LinkedList<Policy> policies = president.draw();
+
+            //If the chancellor and president agree to veto the policies
+            if(chancellor.veto(policies) && president.veto(policies)) {
+                for(int i = 0; i < 2; i++) {
+                    discard.push(policies.remove(0));
+                }
+                numFailed++;
+            }
+            else {
+                Policy played = chancellor.play(policies);
+                numFailed = 0;
+
+                //Play the card and handle fascist policy powers
+                if (played.isLiberal) {
+                    liberalPolicies.push(played);
+                } else {
+                    fascistPolicies.push(played);
+
+                    if (fascistPolicies.size() == 2) {
+                        president.investigate();
+                    } else if (fascistPolicies.size() == 3) {
+                        president = players.get(president.chosePresident());
+                        presidentPicks = true;
+                    } else if (fascistPolicies.size() == 4) {
+                        president.shoot();
+                    } else if (fascistPolicies.size() == 5) {
+                        president.shoot();
+                        vetoPower = true;
+                    }
                 }
             }
         }
         else {
-            discard.push(played);
+            //If the president/chancellor combo was voted down, increase the election tracker
+            numFailed++;
         }
 
-        if(liberalPolicies.size() == 5 || hitlerIsDead()) {
+        //If three governments have failed in a row, flip a policy from the deck
+        if(numFailed == 3) {
+            if(deck.size() < 1) {
+                shuffleInDiscard();
+            }
+            Policy flip = deck.pop();
+
+            if (flip.isLiberal) {
+                liberalPolicies.push(flip);
+            } else {
+                fascistPolicies.push(flip);
+            }
+            //Reset the election tracker
+            numFailed = 0;
+            //Anyone can be the next chancellor
+            chancellor = null;
+        }
+
+        //Handle win conditions
+        if (fascistPolicies.size() == 6) {
+            return false;
+        }
+        else if(liberalPolicies.size() == 5 || hitlerIsDead()) {
             return true;
         }
 
@@ -101,6 +165,7 @@ public class Game {
 
     /**
      * Gets the index of the chancellor
+     *
      * @return index of the chancellor, -1 if no chancellor
      */
     public int getChancellorIndex() {
@@ -112,15 +177,23 @@ public class Game {
         return -1;
     }
 
+    /**
+     * Shuffles the discard back into the deck
+     */
     public void shuffleInDiscard() {
         deck.addAll(discard);
         discard = new Stack<Policy>();
         Collections.shuffle(deck);
     }
 
-    public boolean hitlerIsDead() {
+    /**
+     * Determines if a player with the HITLER role is alive
+     *
+     * @return true if a player with the HITLER role remains in the players list, false otherwise
+     */
+    private boolean hitlerIsDead() {
         for (Player player : players) {
-            if (player.role.val) {
+            if (player.role.isHitler) {
                 return false;
             }
         }

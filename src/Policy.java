@@ -1,10 +1,18 @@
+/**
+ * Models a policy card
+ */
 public enum Policy {
     LIBERAL(true),
     FASCIST(false);
 
-    public final boolean val;
+    public final boolean isLiberal; //If the policy is LIBERAL
 
-    private Policy(boolean val) {
-        this.val = val;
+    /**
+     * Constructor
+     *
+     * @param isLiberal true if the policy is LIBERAL, false if the policy is FASCIST
+     */
+    private Policy(boolean isLiberal) {
+        this.isLiberal = isLiberal;
     }
 }
