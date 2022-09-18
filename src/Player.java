@@ -7,7 +7,7 @@ import java.util.Random;
  */
 public abstract class Player
 {
-    private final Game game;    //Game the player is taking part in
+    protected final Game game;    //Game the player is taking part in
     protected Role role;        //Player's role
     protected Party party;      //Player's party
 
@@ -82,6 +82,7 @@ public abstract class Player
 
     /**
      * Plays one of two policies, adding the unplayed policy to the discard
+     * Default behavior is random
      *
      * @precondition the player is the chancellor
      * @precondition policies.size() == 2
