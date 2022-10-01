@@ -1,3 +1,5 @@
+package enums;
+
 /**
  * Player role enum
  */

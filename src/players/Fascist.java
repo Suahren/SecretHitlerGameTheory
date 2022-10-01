@@ -1,3 +1,10 @@
+package players;
+
+import enums.Party;
+import enums.Policy;
+import enums.Role;
+import game.Game;
+
 import java.util.LinkedList;
 
 /**
@@ -32,7 +39,7 @@ public class Fascist extends Player {
 
         LinkedList<Policy> hand = new LinkedList<Policy>();
         //Draw three cards from the deck
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < 3; i++) {
             hand.add(game.deck.pop());
         }
 

@@ -1,6 +1,18 @@
+package game;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Stack;
+
+import actions.Action;
+import actions.PolicyAction;
+import actions.PlayerAction;
+import enums.ActionType;
+import enums.Policy;
+import players.Fascist;
+import players.Hitler;
+import players.Liberal;
+import players.Player;
 
 /**
  * Handles a game of Secret Hitler
@@ -8,6 +20,8 @@ import java.util.Stack;
 public class Game {
 
     public LinkedList<Player> players;      //List of alive players
+    public LinkedList<Player> deadPlayers;  //List of dead players
+    public LinkedList<Action> actions;     //Master list of all game actions
     public Stack<Policy> deck;              //Deck of policies
     public Stack<Policy> discard;           //Discard for policies
     public Stack<Policy> liberalPolicies;   //Played liberal policies
@@ -27,6 +41,8 @@ public class Game {
     public Game()
     {
         players = new LinkedList<Player>();
+        deadPlayers = new LinkedList<Player>();
+        actions = new LinkedList<Action>();
         deck = new Stack<Policy>();
         discard = new Stack<Policy>();
         liberalPolicies = new Stack<Policy>();
@@ -60,7 +76,6 @@ public class Game {
         vetoPower = false;
     }
 
-
     /**
      * Handles a round, runs recursively until a win condition is met
      *
@@ -71,20 +86,24 @@ public class Game {
 
         //Rotate the president unless the previous president already picked the new president
         if(!presidentPicks) {
-            int newIndex = (president.getPlayerIndex() + 1) % players.size();
-            president = players.get(newIndex);
+            president = players.get((president.getPlayerIndex() + 1) % players.size());
         }
         else {
             presidentPicks = false;
         }
 
         chancellor = players.get(president.choseChancellor());
+        playerAction(president, ActionType.SELECT, chancellor);
 
         //Each player votes
         int numYes = 0;
         for(Player player : players) {
             if(player.vote(president, chancellor)) {
                 numYes++;
+                playerAction(player, ActionType.VOTE_YES, president, chancellor);
+            }
+            else {
+                playerAction(player, ActionType.VOTE_NO, president, chancellor);
             }
         }
 
@@ -92,14 +111,17 @@ public class Game {
         if((double) numYes / (double) players.size() > .5) {
 
             //If Hitler is elected chancellor after 3 fascist policies have been played, the fascists win
-            if(fascistPolicies.size() > 3 && chancellor.role.isHitler) {
+            if(fascistPolicies.size() > 3 && chancellor.getRole().isHitler) {
                 return false;
             }
 
             LinkedList<Policy> policies = president.draw();
+            policyAction(president, ActionType.DISCARD, discard.peek());
 
             //If the chancellor and president agree to veto the policies
             if(chancellor.veto(policies) && president.veto(policies)) {
+                policyAction(president, ActionType.VETO, policies.get(0), policies.get(1));
+
                 for(int i = 0; i < 2; i++) {
                     discard.push(policies.remove(0));
                 }
@@ -107,6 +129,8 @@ public class Game {
             }
             else {
                 Policy played = chancellor.play(policies);
+                policyAction(chancellor, ActionType.DISCARD, discard.peek());
+                policyAction(chancellor, ActionType.PLAY, played);
                 numFailed = 0;
 
                 //Play the card and handle fascist policy powers
@@ -116,14 +140,16 @@ public class Game {
                     fascistPolicies.push(played);
 
                     if (fascistPolicies.size() == 2) {
-                        president.investigate();
+                        playerAction(president, ActionType.INVESTIGATE, president.investigate());
                     } else if (fascistPolicies.size() == 3) {
+                        Player oldPresident = president;
                         president = players.get(president.chosePresident());
                         presidentPicks = true;
+                        playerAction(oldPresident, ActionType.SELECT, president);
                     } else if (fascistPolicies.size() == 4) {
-                        president.shoot();
+                        playerAction(president, ActionType.SHOOT, president.shoot());
                     } else if (fascistPolicies.size() == 5) {
-                        president.shoot();
+                        playerAction(president, ActionType.SHOOT, president.shoot());
                         vetoPower = true;
                     }
                 }
@@ -187,16 +213,104 @@ public class Game {
     }
 
     /**
+     * Removes the player at the specified index from the player list and adds them to the dead players list
+     *
+     * @param playerIndex index of the player to be killed
+     * @return the killed player
+     */
+    public Player kill(int playerIndex) {
+        Player killed = players.remove(playerIndex);
+        deadPlayers.add(killed);
+        return killed;
+    }
+
+    /**
      * Determines if a player with the HITLER role is alive
      *
      * @return true if a player with the HITLER role remains in the players list, false otherwise
      */
     private boolean hitlerIsDead() {
         for (Player player : players) {
-            if (player.role.isHitler) {
+            if (player.getRole().isHitler) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Helper method to add a PlayerAction to the actions list
+     *
+     * @precondition type is SELECT, ACCUSE, INVESTIGATE, or SHOOT
+     * @param player the player who performed the action
+     * @param type the type of action
+     * @param victim the player the action was performed on
+     */
+    private void playerAction(Player player, ActionType type, Player victim) {
+        actions.add(new PlayerAction(player, type, makeList(victim)));
+    }
+
+    /**
+     * Helper method to add a PlayerAction to the actions list
+     *
+     * @precondition type is VOTE_YES, or VOTE_NO
+     * @param player the player who performed the action
+     * @param type the type of action
+     * @param firstVictim the first player the action was performed on
+     * @param secondVictim the second player the action was performed on
+     */
+    private void playerAction(Player player, ActionType type, Player firstVictim, Player secondVictim) {
+        actions.add(new PlayerAction(player, type, makeList(firstVictim, secondVictim)));
+    }
+
+    /**
+     * Helper method to add a PolicyAction to the actions list
+     *
+     * @precondition type is DISCARD, PLAY, or DECLARE_DISCARD
+     * @param player the player who performed the action
+     * @param type the type of action
+     * @param policy the policy that was played or declared
+     */
+    private void policyAction(Player player, ActionType type, Policy policy) {
+        actions.add(new PolicyAction(player, type, makeList(policy)));
+    }
+
+    /**
+     * Helper method to add a PolicyAction to the actions list
+     *
+     * @precondition type is DECLARE_PASSED or VETO
+     * @param player the player who performed the action
+     * @param type the type of action
+     * @param firstPolicy the first policy that was played or declared
+     * @param secondPolicy the second policy that was played or declared
+     */
+    private void policyAction(Player player, ActionType type, Policy firstPolicy, Policy secondPolicy) {
+        actions.add(new PolicyAction(player, type, makeList(firstPolicy, secondPolicy)));
+    }
+
+    /**
+     * Helper method to wrap an object in a LinkedList
+     *
+     * @param single object to be wrapped
+     * @return a LinkedList containing single
+     */
+    private <T> LinkedList<T> makeList(T single) {
+        LinkedList<T> list = new LinkedList<T>();
+        list.add(single);
+        return list;
+    }
+
+    /**
+     * Helper method to wrap two objects in a LinkedList
+     *
+     * @param first first object to be wrapped
+     * @param second second object to be wrapped
+     * @return a LinkedList containing first and second
+     */
+    private <T> LinkedList<T> makeList(T first, T second) {
+        LinkedList<T> list = new LinkedList<T>();
+        list.add(first);
+        list.add(second);
+        return list;
     }
 }

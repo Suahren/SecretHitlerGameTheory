@@ -1,3 +1,9 @@
+package players;
+
+import enums.Party;
+import enums.Role;
+import game.Game;
+
 /**
  * Implements strategy for a Hitler Player
  */

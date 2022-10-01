@@ -1,3 +1,10 @@
+package players;
+
+import enums.Party;
+import enums.Policy;
+import enums.Role;
+import game.Game;
+
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -16,8 +23,16 @@ public abstract class Player
      *
      * @param game game the player is taking part in
      */
-    public Player(Game game){
+    public Player(Game game) {
         this.game = game;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public Party getParty() {
+        return party;
     }
 
     /**
@@ -44,7 +59,7 @@ public abstract class Player
             mod++;
         }
         //If the previous chancellor's index is below or at the chosen index, increase the index by one to account
-        if(playerIndex != lastChancellor && index >= lastChancellor){
+        if(playerIndex != lastChancellor && index >= lastChancellor) {
             mod++;
         }
         //Add the increase
@@ -68,7 +83,7 @@ public abstract class Player
 
         LinkedList<Policy> hand = new LinkedList<Policy>();
         //Draw three cards from the deck
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < 3; i++) {
             hand.add(game.deck.pop());
         }
         //Discards a random card from the hand
@@ -97,10 +112,12 @@ public abstract class Player
 
     /**
      * Handles investigating another player's party enum
-     * Default behavior does nothing
+     * Default behavior picks a random player and does nothing
+     *
+     * @return the investigated player
      */
-    public void investigate() {
-
+    public Player investigate() {
+        return game.players.get(pickRandomPlayer());
     }
 
     /**
@@ -139,9 +156,10 @@ public abstract class Player
      * Default behavior is random
      *
      * @precondition the fourth or fifth fascist policies were just played by the current chancellor
+     * @return the killed player
      */
-    public void shoot() {
-        game.players.remove(pickRandomPlayer());
+    public Player shoot() {
+        return game.kill(pickRandomPlayer());
     }
 
     /**
@@ -176,7 +194,7 @@ public abstract class Player
      *
      * @return index of a random player
      */
-    private int pickRandomPlayer(){
+    private int pickRandomPlayer() {
         int playerIndex = getPlayerIndex();
 
         Random rand = new Random();

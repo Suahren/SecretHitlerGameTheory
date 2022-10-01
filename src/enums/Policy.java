@@ -1,3 +1,5 @@
+package enums;
+
 /**
  * Models a policy card
  */

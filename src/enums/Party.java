@@ -1,3 +1,5 @@
+package enums;
+
 /**
  * Player party identification enum
  */
