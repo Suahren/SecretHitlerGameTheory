@@ -29,6 +29,10 @@ public class PolicyAction extends Action {
                 type == ActionType.DECLARE_PASSED ||
                 type == ActionType.DECLARE_DISCARD ||
                 type == ActionType.VETO);
+        assert((policies.size() == 2 &&
+                    (type == ActionType.DECLARE_PASSED || type == ActionType.VETO)) ||
+                (policies.size() == 1 &&
+                    (type != ActionType.DECLARE_PASSED && type != ActionType.VETO)));
 
         this.policies = policies;
     }

@@ -1,7 +1,5 @@
 package game;
 
-/*
-//Imports for testing action system
 import actions.Action;
 import actions.PlayerAction;
 import actions.PolicyAction;
@@ -9,7 +7,6 @@ import enums.Policy;
 import players.Player;
 
 import java.util.LinkedList;
-*/
 
 /**
  * Runs a game of Secret Hitler
@@ -33,10 +30,10 @@ public class GameRunner {
             count++;
         }
 
-        System.out.printf("Liberals won %.2f%% of the time\n", ((double)numLibWins / (double)count) * 100);
+        System.out.printf("Liberals won %.2f%% of the time\n",
+                ((double)numLibWins / (double)count) * 100);
         System.out.printf("Average number of rounds: %.2f\n", (double)numRounds / (double)count);
 
-        /*
         //For testing the action system
         Game game = new Game();
         boolean libsWon = game.round();
@@ -46,7 +43,7 @@ public class GameRunner {
                 LinkedList<Player> players = ((PlayerAction) action).getVictims();
                 for(Player player : players) {
                     addition.append(player.getRole().toString()).append(" ")
-                            .append(player.getPlayerIndex()).append(", ");
+                            .append(player.getId()).append(", ");
                 }
             }
             else if(action.getClass() == PolicyAction.class) {
@@ -56,10 +53,11 @@ public class GameRunner {
                 }
             }
             addition = new StringBuilder(addition.substring(0, addition.length() - 2));
-            System.out.printf("%s %d performed action %s on %s\n", action.getPlayer().getRole().toString(),
-                    action.getPlayer().getPlayerIndex(), action.getType().toString(), addition.toString());
+            System.out.printf("%s %d performed action %s on %s\n",
+                    action.getPlayer().getRole().toString(), action.getPlayer().getId(),
+                    action.getType().toString(), addition.toString());
         }
-        System.out.printf("%s won in %d rounds\n", libsWon ? "Liberals" : "Fascists", game.numRounds);
-        */
+        System.out.printf("%s won in %d rounds\n",
+                libsWon ? "Liberals" : "Fascists", game.numRounds);
     }
 }

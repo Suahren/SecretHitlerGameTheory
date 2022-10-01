@@ -15,10 +15,11 @@ public class Liberal extends Player {
     /**
      * Constructor
      *
+     * @param id unique identifier for the player
      * @param game game the player is taking part in
      */
-    public Liberal(Game game) {
-        super(game);
+    public Liberal(int id, Game game) {
+        super(id, game);
         role = Role.LIBERAL;
         party = Party.LIBERAL;
     }
@@ -32,6 +33,7 @@ public class Liberal extends Player {
      * @return two policies for the chancellor to pick from
      */
     public LinkedList<Policy> draw() {
+        assert(this == game.president);
         //Shuffle in discard if not enough cards in the deck
         if(game.deck.size() < 3) {
             game.shuffleInDiscard();
@@ -70,6 +72,8 @@ public class Liberal extends Player {
      * @return the played policy
      */
     public Policy play(LinkedList<Policy> policies) {
+        assert(this == game.chancellor);
+        assert(policies.size() == 2);
         //If the first policy is liberal, return it and discard the second policy
         if(policies.get(0).isLiberal) {
             game.discard.push(policies.get(1));

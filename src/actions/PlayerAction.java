@@ -29,6 +29,10 @@ public class PlayerAction extends Action {
                 type == ActionType.SHOOT ||
                 type == ActionType.VOTE_YES ||
                 type == ActionType.VOTE_NO);
+        assert((victims.size() == 2 &&
+                    (type == ActionType.VOTE_YES || type == ActionType.VOTE_NO)) ||
+                (victims.size() == 1 &&
+                    (type != ActionType.VOTE_YES && type != ActionType.VOTE_NO)));
         this.victims = victims;
     }
 

@@ -12,10 +12,11 @@ public class Hitler extends Fascist {
     /**
      * Constructor
      *
+     * @param id unique identifier for the player
      * @param game game the player is taking part in
      */
-    public Hitler(Game game) {
-        super(game);
+    public Hitler(int id, Game game) {
+        super(id, game);
         role = Role.HITLER;
         party = Party.FASCIST;
     }

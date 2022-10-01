@@ -15,10 +15,11 @@ public class Fascist extends Player {
     /**
      * Constructor
      *
+     * @param id unique identifier for the player
      * @param game game the player is taking part in
      */
-    public Fascist(Game game) {
-        super(game);
+    public Fascist(int id, Game game) {
+        super(id, game);
         role = Role.FASCIST;
         party = Party.FASCIST;
     }
@@ -32,6 +33,7 @@ public class Fascist extends Player {
      * @return two policies for the chancellor to pick from
      */
     public LinkedList<Policy> draw() {
+        assert(this == game.president);
         //Shuffle in discard if not enough cards in the deck
         if(game.deck.size() < 3) {
             game.shuffleInDiscard();
@@ -70,6 +72,8 @@ public class Fascist extends Player {
      * @return the played policy
      */
     public Policy play(LinkedList<Policy> policies) {
+        assert(this == game.chancellor);
+        assert(policies.size() == 2);
         //If both policies are the same, discard the first and return the other
         if(policies.get(0).isLiberal == policies.get(0).isLiberal) {
             game.discard.push(policies.get(0));
