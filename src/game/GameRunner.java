@@ -34,7 +34,7 @@ public class GameRunner {
         }
 
         System.out.printf("Liberals won %.2f%% of the time\n", ((double)numLibWins / (double)count) * 100);
-        System.out.printf("Average number of rounds: %.2f\n",(double)numRounds / (double)count);
+        System.out.printf("Average number of rounds: %.2f\n", (double)numRounds / (double)count);
 
         /*
         //For testing the action system

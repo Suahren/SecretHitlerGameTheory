@@ -21,7 +21,7 @@ public class Game {
 
     public LinkedList<Player> players;      //List of alive players
     public LinkedList<Player> deadPlayers;  //List of dead players
-    public LinkedList<Action> actions;     //Master list of all game actions
+    public LinkedList<Action> actions;      //Master list of all game actions
     public Stack<Policy> deck;              //Deck of policies
     public Stack<Policy> discard;           //Discard for policies
     public Stack<Policy> liberalPolicies;   //Played liberal policies
@@ -93,17 +93,17 @@ public class Game {
         }
 
         chancellor = players.get(president.choseChancellor());
-        playerAction(president, ActionType.SELECT, chancellor);
+        addPlayerAction(president, ActionType.SELECT, chancellor);
 
         //Each player votes
         int numYes = 0;
         for(Player player : players) {
             if(player.vote(president, chancellor)) {
                 numYes++;
-                playerAction(player, ActionType.VOTE_YES, president, chancellor);
+                addPlayerAction(player, ActionType.VOTE_YES, president, chancellor);
             }
             else {
-                playerAction(player, ActionType.VOTE_NO, president, chancellor);
+                addPlayerAction(player, ActionType.VOTE_NO, president, chancellor);
             }
         }
 
@@ -116,11 +116,11 @@ public class Game {
             }
 
             LinkedList<Policy> policies = president.draw();
-            policyAction(president, ActionType.DISCARD, discard.peek());
+            addPolicyAction(president, ActionType.DISCARD, discard.peek());
 
             //If the chancellor and president agree to veto the policies
             if(chancellor.veto(policies) && president.veto(policies)) {
-                policyAction(president, ActionType.VETO, policies.get(0), policies.get(1));
+                addPolicyAction(president, ActionType.VETO, policies.get(0), policies.get(1));
 
                 for(int i = 0; i < 2; i++) {
                     discard.push(policies.remove(0));
@@ -129,8 +129,8 @@ public class Game {
             }
             else {
                 Policy played = chancellor.play(policies);
-                policyAction(chancellor, ActionType.DISCARD, discard.peek());
-                policyAction(chancellor, ActionType.PLAY, played);
+                addPolicyAction(chancellor, ActionType.DISCARD, discard.peek());
+                addPolicyAction(chancellor, ActionType.PLAY, played);
                 numFailed = 0;
 
                 //Play the card and handle fascist policy powers
@@ -140,16 +140,16 @@ public class Game {
                     fascistPolicies.push(played);
 
                     if (fascistPolicies.size() == 2) {
-                        playerAction(president, ActionType.INVESTIGATE, president.investigate());
+                        addPlayerAction(president, ActionType.INVESTIGATE, president.investigate());
                     } else if (fascistPolicies.size() == 3) {
                         Player oldPresident = president;
                         president = players.get(president.chosePresident());
                         presidentPicks = true;
-                        playerAction(oldPresident, ActionType.SELECT, president);
+                        addPlayerAction(oldPresident, ActionType.SELECT, president);
                     } else if (fascistPolicies.size() == 4) {
-                        playerAction(president, ActionType.SHOOT, president.shoot());
+                        addPlayerAction(president, ActionType.SHOOT, president.shoot());
                     } else if (fascistPolicies.size() == 5) {
-                        playerAction(president, ActionType.SHOOT, president.shoot());
+                        addPlayerAction(president, ActionType.SHOOT, president.shoot());
                         vetoPower = true;
                     }
                 }
@@ -246,7 +246,7 @@ public class Game {
      * @param type the type of action
      * @param victim the player the action was performed on
      */
-    private void playerAction(Player player, ActionType type, Player victim) {
+    private void addPlayerAction(Player player, ActionType type, Player victim) {
         actions.add(new PlayerAction(player, type, makeList(victim)));
     }
 
@@ -259,7 +259,7 @@ public class Game {
      * @param firstVictim the first player the action was performed on
      * @param secondVictim the second player the action was performed on
      */
-    private void playerAction(Player player, ActionType type, Player firstVictim, Player secondVictim) {
+    private void addPlayerAction(Player player, ActionType type, Player firstVictim, Player secondVictim) {
         actions.add(new PlayerAction(player, type, makeList(firstVictim, secondVictim)));
     }
 
@@ -271,7 +271,7 @@ public class Game {
      * @param type the type of action
      * @param policy the policy that was played or declared
      */
-    private void policyAction(Player player, ActionType type, Policy policy) {
+    private void addPolicyAction(Player player, ActionType type, Policy policy) {
         actions.add(new PolicyAction(player, type, makeList(policy)));
     }
 
@@ -284,7 +284,7 @@ public class Game {
      * @param firstPolicy the first policy that was played or declared
      * @param secondPolicy the second policy that was played or declared
      */
-    private void policyAction(Player player, ActionType type, Policy firstPolicy, Policy secondPolicy) {
+    private void addPolicyAction(Player player, ActionType type, Policy firstPolicy, Policy secondPolicy) {
         actions.add(new PolicyAction(player, type, makeList(firstPolicy, secondPolicy)));
     }
 
