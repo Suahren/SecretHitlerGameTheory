@@ -6,10 +6,12 @@ package enums;
 public enum ActionType {
 
     //Policy Types
-    DISCARD,            //Discard a policy
     PLAY,               //Play a policy
+    DISCARD,            //Discard a policy
+    PASS,               //Pass policies to the chancellor
+    DECLARE_DISCARDED,  //Declare what policy was discarded
     DECLARE_PASSED,     //Declare what policies were passed to the chancellor
-    DECLARE_DISCARD,    //Declare what policy was discarded
+
     VETO,               //Veto a pair of policies
 
     //Player Types

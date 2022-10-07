@@ -39,4 +39,14 @@ public abstract class Action {
     public ActionType getType() {
         return type;
     }
+
+    /**
+     * Produces a String representation of the Action
+     *
+     * @return a String representation of the Action
+     */
+    @Override
+    public String toString() {
+        return player.getRole() + " " + player.getId() + " " + type;
+    }
 }

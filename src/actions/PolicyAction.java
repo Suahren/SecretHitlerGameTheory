@@ -17,22 +17,24 @@ public class PolicyAction extends Action {
      * Constructor
      *
      * @precondition type is DISCARD, PLAY, DECLARE_PASSED, or DECLARE_DISCARD
-     * @precondition policies is size 2 if type is DECLARE_PASSED or VETO, size 1 otherwise
+     * @precondition if present, policies is size 2 if type is PASS, DECLARE_PASSED or VETO, size 1
+     *               otherwise
      * @param player the player who performed the action
      * @param type the type of action
      * @param policies the policies that were played or declared
      */
     public PolicyAction(Player player, ActionType type, LinkedList<Policy> policies) {
         super(player, type);
-        assert(type == ActionType.DISCARD ||
-                type == ActionType.PLAY ||
+        assert(type == ActionType.PLAY ||
+                type == ActionType.DISCARD ||
+                type == ActionType.PASS ||
+                type == ActionType.DECLARE_DISCARDED ||
                 type == ActionType.DECLARE_PASSED ||
-                type == ActionType.DECLARE_DISCARD ||
                 type == ActionType.VETO);
-        assert((policies.size() == 2 &&
+        assert((policies == null || (policies.size() == 2 &&
                     (type == ActionType.DECLARE_PASSED || type == ActionType.VETO)) ||
                 (policies.size() == 1 &&
-                    (type != ActionType.DECLARE_PASSED && type != ActionType.VETO)));
+                    (type != ActionType.DECLARE_PASSED && type != ActionType.VETO))));
 
         this.policies = policies;
     }
@@ -44,5 +46,24 @@ public class PolicyAction extends Action {
      */
     public LinkedList<Policy> getPolicies() {
         return policies;
+    }
+
+    /**
+     * Produces a String representation of the PolicyAction
+     *
+     * @return a String representation of the PolicyAction
+     */
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder(" ");
+        if(policies == null ) {
+            out.append("UNKNOWN ");
+        }
+        else {
+            for (Policy policy : policies) {
+                out.append(policy).append(" ");
+            }
+        }
+        return super.toString() + out.substring(0, out.length() - 1);
     }
 }

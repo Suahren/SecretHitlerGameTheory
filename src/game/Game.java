@@ -79,6 +79,7 @@ public class Game {
         Collections.sort(players);
         Collections.shuffle(deck);
 
+        //Will set president to be the first player once the round starts
         president = players.get(6);
 
         vetoPower = false;
@@ -125,6 +126,7 @@ public class Game {
 
             LinkedList<Policy> policies = president.draw();
             addAction(president, ActionType.DISCARD, discard.peek());
+            addAction(president, ActionType.PASS, policies.get(0), policies.get(1));
 
             //If the chancellor and president agree to veto the policies
             if(chancellor.veto(policies) && president.veto(policies)) {
@@ -259,6 +261,7 @@ public class Game {
         assert(type == ActionType.SELECT || type == ActionType.ACCUSE ||
                 type == ActionType.INVESTIGATE || type == ActionType.SHOOT);
         actions.add(new PlayerAction(player, type, makeList(victim)));
+        updatePlayerKnowledge();
     }
 
     /**
@@ -273,6 +276,7 @@ public class Game {
     private void addAction(Player player, ActionType type, Player first, Player second) {
         assert(type == ActionType.VOTE_YES || type == ActionType.VOTE_NO);
         actions.add(new PlayerAction(player, type, makeList(first, second)));
+        updatePlayerKnowledge();
     }
 
     /**
@@ -285,22 +289,48 @@ public class Game {
      */
     private void addAction(Player player, ActionType type, Policy policy) {
         assert(type == ActionType.DISCARD || type == ActionType.PLAY ||
-                type == ActionType.DECLARE_DISCARD);
+                type == ActionType.DECLARE_DISCARDED);
         actions.add(new PolicyAction(player, type, makeList(policy)));
+        updatePlayerKnowledge();
     }
 
     /**
      * Helper method to add a PolicyAction to the actions list
      *
-     * @precondition type is DECLARE_PASSED or VETO
+     * @precondition type is PASS, DECLARE_PASSED or VETO
      * @param player the player who performed the action
      * @param type the type of action
      * @param first the first policy that was played or declared
      * @param second the second policy that was played or declared
      */
     private void addAction(Player player, ActionType type, Policy first, Policy second) {
-        assert(type == ActionType.DECLARE_PASSED || type == ActionType.VETO);
+        assert(type == ActionType.PASS || type == ActionType.DECLARE_PASSED
+                || type == ActionType.VETO);
         actions.add(new PolicyAction(player, type, makeList(first, second)));
+        updatePlayerKnowledge();
+    }
+
+    /**
+     * Updates player knowledge with the last processed action
+     */
+    private void updatePlayerKnowledge() {
+        if(actions.getLast().getType() == ActionType.DISCARD ||
+                actions.getLast().getType() == ActionType.PASS) {
+            for (Player player : players) {
+                //No one but the passer or discarder knows what cards were passed or discarded
+                if (player != actions.getLast().getPlayer()) {
+                    player.addAction(new PolicyAction(actions.getLast().getPlayer(),
+                            actions.getLast().getType(), null));
+                }
+            }
+            actions.getLast().getPlayer().addAction(actions.getLast());
+        }
+        else {
+            //If actions is visible to all players, add the action to all players
+            for (Player player : players) {
+                player.addAction(actions.getLast());
+            }
+        }
     }
 
     /**

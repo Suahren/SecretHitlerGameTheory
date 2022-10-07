@@ -16,7 +16,7 @@ public class PlayerAction extends Action {
      * Constructor
      *
      * @precondition type is SELECT, ACCUSE, INVESTIGATE, SHOOT, VOTE_YES, or VOTE_NO
-     * @precondition vitims size is 2 if type is VOTE_YES or VOTE_NO, size 1 otherwise
+     * @precondition if present, victims size is 2 if type is VOTE_YES or VOTE_NO, size 1 otherwise
      * @param player the player who performed the action
      * @param type the type of action
      * @param victims the players the action was performed on
@@ -29,10 +29,10 @@ public class PlayerAction extends Action {
                 type == ActionType.SHOOT ||
                 type == ActionType.VOTE_YES ||
                 type == ActionType.VOTE_NO);
-        assert((victims.size() == 2 &&
+        assert(victims == null || ((victims.size() == 2 &&
                     (type == ActionType.VOTE_YES || type == ActionType.VOTE_NO)) ||
                 (victims.size() == 1 &&
-                    (type != ActionType.VOTE_YES && type != ActionType.VOTE_NO)));
+                    (type != ActionType.VOTE_YES && type != ActionType.VOTE_NO))));
         this.victims = victims;
     }
 
@@ -43,5 +43,24 @@ public class PlayerAction extends Action {
      */
     public LinkedList<Player> getVictims() {
         return victims;
+    }
+
+    /**
+     * Produces a String representation of the PlayerAction
+     *
+     * @return a String representation of the PlayerAction
+     */
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder(" ");
+        if(victims == null ) {
+            out.append("UNKNOWN ");
+        }
+        else {
+            for (Player victim : victims) {
+                out.append(victim.getRole()).append(" ").append(victim.getId()).append(" ");
+            }
+        }
+        return super.toString() + out.substring(0, out.length() - 1);
     }
 }
