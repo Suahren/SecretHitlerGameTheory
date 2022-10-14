@@ -6,6 +6,7 @@ import actions.PolicyAction;
 import enums.Policy;
 import players.Player;
 
+import java.time.Instant;
 import java.util.LinkedList;
 
 /**
@@ -15,11 +16,14 @@ public class GameRunner {
 
     public static void main(String[] args) {
 
+        Instant start = Instant.now();
+
+        int numGames = 4096 * 4096;
         int numLibWins = 0;
         int count = 0;
         int numRounds = 0;
 
-        for(int i = 0; i < 4096 * 4096; i++) {
+        for(int i = 0; i < numGames; i++) {
             Game game = new Game();
             boolean libsWon = game.round();
 
@@ -30,34 +34,12 @@ public class GameRunner {
             count++;
         }
 
+        Instant end = Instant.now();
+        System.out.println("This version produced the following results:");
+        System.out.println(numGames + " games executed in " +
+                (end.getEpochSecond() - start.getEpochSecond()) + " seconds");
         System.out.printf("Liberals won %.2f%% of the time\n",
                 ((double)numLibWins / (double)count) * 100);
         System.out.printf("Average number of rounds: %.2f\n", (double)numRounds / (double)count);
-
-        //For testing the action system
-        Game game = new Game();
-        boolean libsWon = game.round();
-        for(Action action : game.actions) {
-            StringBuilder addition = new StringBuilder();
-            if(action.getClass() == PlayerAction.class) {
-                LinkedList<Player> players = ((PlayerAction) action).getVictims();
-                for(Player player : players) {
-                    addition.append(player.getRole().toString()).append(" ")
-                            .append(player.getId()).append(", ");
-                }
-            }
-            else if(action.getClass() == PolicyAction.class) {
-                LinkedList<Policy> policies = ((PolicyAction) action).getPolicies();
-                for(Policy policy : policies) {
-                    addition.append(policy.toString()).append(" policy , ");
-                }
-            }
-            addition = new StringBuilder(addition.substring(0, addition.length() - 2));
-            System.out.printf("%s %d performed action %s on %s\n",
-                    action.getPlayer().getRole().toString(), action.getPlayer().getId(),
-                    action.getType().toString(), addition.toString());
-        }
-        System.out.printf("%s won in %d rounds\n",
-                libsWon ? "Liberals" : "Fascists", game.numRounds);
     }
 }

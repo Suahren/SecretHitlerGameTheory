@@ -46,6 +46,17 @@ public class PlayerAction extends Action {
     }
 
     /**
+     * Gets the player the action was performed on in cases where there is only one victim
+     *
+     * @precondition vicitms.size() == 1
+     * @return the player
+     */
+    public Player getVictim() {
+        assert(victims.size() == 1);
+        return victims.get(0);
+    }
+
+    /**
      * Produces a String representation of the PlayerAction
      *
      * @return a String representation of the PlayerAction

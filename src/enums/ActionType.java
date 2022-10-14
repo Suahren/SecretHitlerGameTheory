@@ -11,7 +11,6 @@ public enum ActionType {
     PASS,               //Pass policies to the chancellor
     DECLARE_DISCARDED,  //Declare what policy was discarded
     DECLARE_PASSED,     //Declare what policies were passed to the chancellor
-
     VETO,               //Veto a pair of policies
 
     //Player Types

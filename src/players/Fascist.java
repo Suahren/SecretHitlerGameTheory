@@ -12,6 +12,9 @@ import java.util.LinkedList;
  */
 public class Fascist extends Player {
 
+
+    private Role[] playerRoles; //Fascist player role knowledge
+
     /**
      * Constructor
      *
@@ -22,6 +25,11 @@ public class Fascist extends Player {
         super(id, game);
         role = Role.FASCIST;
         party = Party.FASCIST;
+        playerRoles = new Role[7];
+        for(int i = 0; i < game.players.size(); i++) {
+            playerParties[i] = game.players.get(i).getParty();
+            playerRoles[i] = game.players.get(i).getRole();
+        }
     }
 
     /**
@@ -38,13 +46,11 @@ public class Fascist extends Player {
         if(game.deck.size() < 3) {
             game.shuffleInDiscard();
         }
-
         LinkedList<Policy> hand = new LinkedList<Policy>();
         //Draw three cards from the deck
         for(int i = 0; i < 3; i++) {
             hand.add(game.deck.pop());
         }
-
         //Discard a liberal policy if it exists in the hand
         for(Policy policy : hand) {
             if(policy.isLiberal) {
@@ -57,7 +63,6 @@ public class Fascist extends Player {
         if(hand.size() == 3) {
             game.discard.add(hand.remove(0));
         }
-
         //Returns the remaining two cards
         return hand;
     }

@@ -41,9 +41,9 @@ public abstract class Action {
     }
 
     /**
-     * Produces a String representation of the Action
+     * Produces a String representation of the action
      *
-     * @return a String representation of the Action
+     * @return a String representation of the action
      */
     @Override
     public String toString() {

@@ -1,6 +1,7 @@
 package players;
 
 import actions.Action;
+import actions.PlayerAction;
 import actions.PolicyAction;
 import enums.ActionType;
 import enums.Party;
@@ -21,6 +22,8 @@ public abstract class Player implements Comparable<Player> {
     protected Role role;                        //Player's role
     protected Party party;                      //Player's party
     protected LinkedList<Action>[] knowledge;   //Actions player is aware of
+    protected int[] suspicions;                 //How suspect each player appears
+    protected Party[] playerParties;            //Known player parties, null if unknown
 
     /**
      * Constructor
@@ -35,6 +38,12 @@ public abstract class Player implements Comparable<Player> {
         knowledge = new LinkedList[7];
         for(int i = 0; i < knowledge.length; i++) {
             knowledge[i] = new LinkedList<Action>();
+        }
+        suspicions = new int[7];
+        playerParties = new Party[7];
+        for(int i = 0; i < game.players.size(); i++) {
+            suspicions[i] = 0;
+            playerParties[i] = this == game.players.get(i) ? this.getParty() : null;
         }
     }
 
@@ -72,7 +81,7 @@ public abstract class Player implements Comparable<Player> {
      * @precondition the current player is the president
      * @return a random player index other than the player's or the previous chancellor's
      */
-    public int choseChancellor() {
+    public int chooseChancellor() {
         assert(this == game.president);
         int playerIndex = getPlayerIndex();
         int lastChancellor = game.getChancellorIndex();
@@ -133,7 +142,7 @@ public abstract class Player implements Comparable<Player> {
 
     /**
      * Plays one of two policies, adding the unplayed policy to the discard
-     * Default behavior is random
+     * Default strategy is random
      *
      * @precondition the player is the chancellor
      * @precondition policies.size() == 2
@@ -150,18 +159,20 @@ public abstract class Player implements Comparable<Player> {
 
     /**
      * Handles investigating another player's party enum
-     * Default behavior picks a random player and does nothing
+     * Default strategy picks a random player and updates player's party list
      *
      * @return the investigated player
      */
     public Player investigate() {
-        return game.players.get(pickRandomPlayer());
+        Player investigated = game.players.get(pickRandomPlayer());
+        playerParties[investigated.getId()] = investigated.getParty();
+        return investigated;
     }
 
     /**
      * Determines if the player will vote for a president/chancellor combo
-     * Default behavior is to always vote yes before three fascist policies are played,
-     * otherwise random
+     * Default strategy is to always vote yes before three fascist policies are played,
+     *   otherwise random
      *
      * @param president the current president
      * @param chancellor the current chancellor
@@ -180,23 +191,23 @@ public abstract class Player implements Comparable<Player> {
 
     /**
      * Chooses the next president
-     * Default behavior is to pick a random player
+     * Default strategy is to pick a random player
      *
      * @precondition the player is the president
      * @precondition the third fascist policy was just played by the current chancellor
      * @return the index of a random player to be selected as the chancellor
      */
-    public int chosePresident() {
+    public int choosePresident() {
         assert(this == game.president);
         assert(game.fascistPolicies.size() == 3 &&
                 game.actions.getLast().getType() == ActionType.PLAY &&
-                ((PolicyAction)game.actions.getLast()).getPolicies().get(0) == Policy.FASCIST);
+                ((PolicyAction)game.actions.getLast()).getPolicy() == Policy.FASCIST);
         return pickRandomPlayer();
     }
 
     /**
      * Shoots a player
-     * Default behavior is random
+     * Default strategy is random
      *
      * @precondition the player is the president
      * @precondition the fourth or fifth fascist policy was just played by the current chancellor
@@ -206,12 +217,13 @@ public abstract class Player implements Comparable<Player> {
         assert(this == game.president);
         assert(game.fascistPolicies.size() == 4 || game.fascistPolicies.size() == 5 &&
                 game.actions.getLast().getType() == ActionType.PLAY &&
-                ((PolicyAction)game.actions.getLast()).getPolicies().get(0) == Policy.FASCIST);
+                ((PolicyAction)game.actions.getLast()).getPolicy() == Policy.FASCIST);
         return game.kill(pickRandomPlayer());
     }
 
     /**
      * Determines if a player will agree to veto the two policies passed to the chancellor
+     * Default strategy is random
      *
      * @precondition veto power is enabled
      * @precondition the player is the current president or current chancellor
@@ -240,11 +252,12 @@ public abstract class Player implements Comparable<Player> {
     }
 
     /**
-     * Adds an action to the knowledge of the player
+     * Adds an action to the knowledge of the player and updates suspicions
      *
      * @param action an action
      */
     public void addAction(Action action) {
+        updateSuspicions(action);
         knowledge[action.getPlayer().getId()].add(action);
     }
 
@@ -264,7 +277,7 @@ public abstract class Player implements Comparable<Player> {
      *
      * @return index of a random player
      */
-    private int pickRandomPlayer() {
+    protected int pickRandomPlayer() {
         int playerIndex = getPlayerIndex();
 
         Random rand = new Random();
@@ -273,5 +286,141 @@ public abstract class Player implements Comparable<Player> {
             index++;
         }
         return index;
+    }
+
+    /**
+     * Gets the least suspicious player excluding self
+     *
+     * @return the least suspicious player's index
+     */
+    protected int getLeastSuspiciousPlayer() {
+        int leastIndex = 0;
+        int leastValue = Integer.MAX_VALUE;
+        for(int i = 0; i < suspicions.length; i++) {
+            if(suspicions[i] < leastValue && game.isAlive(i) && this.id != i) {
+                leastIndex = i;
+                leastValue = suspicions[i];
+            }
+        }
+        return game.findPlayerIndexById(leastIndex);
+    }
+
+    /**
+     * Gets the least suspicious player excluding the chancellor and president
+     *
+     * @return the least suspicious player's index excluding the chancellor and president
+     */
+    protected int getLeastSuspiciousPlayerExclChancellor() {
+        int leastIndex = 0;
+        int leastValue = Integer.MAX_VALUE;
+        for(int i = 0; i < suspicions.length; i++) {
+            if(suspicions[i] < leastValue && game.isAlive(i) &&
+                    (game.chancellor == null || game.chancellor.getId() != i) && this.id != i) {
+                leastIndex = i;
+                leastValue = suspicions[i];
+            }
+        }
+        return game.findPlayerIndexById(leastIndex);
+    }
+
+    /**
+     * Gets the most suspicious player excluding self
+     *
+     * @return the most suspicious player's index
+     */
+    protected int getMostSuspiciousPlayer() {
+        int mostIndex = 0;
+        int mostValue = Integer.MIN_VALUE;
+        for(int i = 0; i < suspicions.length; i++) {
+            if(suspicions[i] > mostValue && game.isAlive(i) && this.id != i) {
+                mostIndex = i;
+                mostValue = suspicions[i];
+            }
+        }
+        return game.findPlayerIndexById(mostIndex);
+    }
+
+    /**
+     * Gets the most suspicious player excluding self and the chancellor
+     *
+     * @return the most suspicious player's index excluding self and the chancellor
+     */
+    protected int getMostSuspicousPlayerExclChancellor() {
+        int mostIndex = 0;
+        int mostValue = Integer.MIN_VALUE;
+        for(int i = 0; i < suspicions.length; i++) {
+            if(suspicions[i] > mostValue && game.isAlive(i) &&
+                    (game.chancellor == null || game.chancellor.getId() != i)  && this.id != i) {
+                mostIndex = i;
+                mostValue = suspicions[i];
+            }
+        }
+        return game.findPlayerIndexById(mostIndex);
+    }
+
+    private void updateSuspicions(Action action) {
+        suspicions[action.getPlayer().getId()] += calcSuspicion(action);
+    }
+
+    /**
+     * Assigns a suspicion value to an isolated action
+     *
+     * @param action an Action
+     * @return the suspicion associated with the action
+     */
+    private int calcSuspicion(Action action) {
+
+        if(playerParties[action.getPlayer().getId()] == Party.FASCIST) {
+            return Integer.MAX_VALUE;
+        }
+        else if(playerParties[action.getPlayer().getId()] == Party.LIBERAL) {
+            return Integer.MIN_VALUE;
+        }
+            if(action.getClass() == PolicyAction.class){
+                PolicyAction policyAction = (PolicyAction)action;
+                switch(policyAction.getType()) {
+                    case PLAY:
+                        if(policyAction.getPolicy() == Policy.FASCIST) {
+                            return 10;
+                        }
+                        else {
+                            return 10;
+                        }
+                    case DISCARD:
+                        if(policyAction.getPolicy() == Policy.FASCIST) {
+                            return 5;
+                        }
+                        else  if(policyAction.getPolicy() == Policy.LIBERAL) {
+                            return 25;
+                        }
+                        break;
+                    case PASS:
+                        break;
+                    case DECLARE_PASSED:
+                        break;
+                    case VETO:
+                        break;
+                }
+            } else {
+                PlayerAction playerAction = (PlayerAction)action;
+                switch(playerAction.getType()) {
+                    case SELECT:
+                        return (int)(suspicions[playerAction.getVictim().getId()] * .5);
+                    case ACCUSE:
+                        if(this == playerAction.getVictim()) {
+                            return 50;
+                        }
+                        break;
+                    case INVESTIGATE:
+                        break;
+                    case SHOOT:
+                        break;
+                    case VOTE_YES:
+                        break;
+                    case VOTE_NO:
+                        break;
+                }
+            }
+        return 0;
     }
 }

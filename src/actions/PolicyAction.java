@@ -49,6 +49,17 @@ public class PolicyAction extends Action {
     }
 
     /**
+     * Gets the policy in cases where there is only one policy
+     *
+     * @precondition policies.size() == 1
+     * @return the policy
+     */
+    public Policy getPolicy() {
+        assert(policies.size() == 1);
+        return policies.get(0);
+    }
+
+    /**
      * Produces a String representation of the PolicyAction
      *
      * @return a String representation of the PolicyAction

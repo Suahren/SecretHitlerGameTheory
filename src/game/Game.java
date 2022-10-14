@@ -32,7 +32,7 @@ public class Game {
 
     public boolean vetoPower;               //If veto power has been enabled
     public int numRounds;                   //Number of rounds passed
-    private int numFailed;                  //Number of rounds without a played policy
+    public int numFailed;                   //Number of rounds without a played policy
     private boolean presidentPicks;         //If the president selects the next president
 
     /**
@@ -75,7 +75,7 @@ public class Game {
             deck.add(Policy.FASCIST);
         }
 
-        //Matches player ids to initial player position
+        //Matches player IDs to initial player position
         Collections.sort(players);
         Collections.shuffle(deck);
 
@@ -101,7 +101,7 @@ public class Game {
             presidentPicks = false;
         }
 
-        chancellor = players.get(president.choseChancellor());
+        chancellor = players.get(president.chooseChancellor());
         addAction(president, ActionType.SELECT, chancellor);
 
         //Each player votes
@@ -153,7 +153,7 @@ public class Game {
                         addAction(president, ActionType.INVESTIGATE, president.investigate());
                     } else if (fascistPolicies.size() == 3) {
                         Player oldPresident = president;
-                        president = players.get(president.chosePresident());
+                        president = players.get(president.choosePresident());
                         presidentPicks = true;
                         addAction(oldPresident, ActionType.SELECT, president);
                     } else if (fascistPolicies.size() == 4) {
@@ -224,7 +224,7 @@ public class Game {
 
     /**
      * Removes the player at the specified index from the player list and adds them to the dead
-     * players list
+     *   players list
      *
      * @param playerIndex index of the player to be killed
      * @return the killed player
@@ -233,6 +233,50 @@ public class Game {
         Player killed = players.remove(playerIndex);
         deadPlayers.add(killed);
         return killed;
+    }
+
+    /**
+     * Gets a player by player ID
+     * @param id player ID
+     * @return a player
+     */
+    public Player findPlayerById(int id) {
+        for(Player player : players) {
+            if(player.getId() == id) {
+                return player;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the player index by player ID
+     *
+     * @param id player ID
+     * @return the player index for the player matching id
+     */
+    public int findPlayerIndexById(int id) {
+        for(int i = 0; i < players.size(); i++) {
+            if(players.get(i).getId() == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Determines if a player with the specified ID is alive
+     *
+     * @param id player ID
+     * @return
+     */
+    public boolean isAlive(int id) {
+        for(Player player : players) {
+            if(player.getId() == id) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -314,16 +358,31 @@ public class Game {
      * Updates player knowledge with the last processed action
      */
     private void updatePlayerKnowledge() {
-        if(actions.getLast().getType() == ActionType.DISCARD ||
-                actions.getLast().getType() == ActionType.PASS) {
+        if(actions.getLast().getType() == ActionType.DISCARD) {
             for (Player player : players) {
-                //No one but the passer or discarder knows what cards were passed or discarded
-                if (player != actions.getLast().getPlayer()) {
+                //No one but the player and the president knows what card was discarded
+                if (player != actions.getLast().getPlayer() && player != president) {
                     player.addAction(new PolicyAction(actions.getLast().getPlayer(),
-                            actions.getLast().getType(), null));
+                            actions.getLast().getType(), dummyPolicies(1)));
                 }
             }
-            actions.getLast().getPlayer().addAction(actions.getLast());
+            //Adds the action to the president and, if visible, to the chancellor
+            president.addAction(actions.getLast());
+            if(actions.getLast().getPlayer() != president) {
+                actions.getLast().getPlayer().addAction(actions.getLast());
+            }
+        }
+        else if(actions.getLast().getType() == ActionType.PASS) {
+            for (Player player : players) {
+                //No one but the president and chancellor knows what cards were passed
+                if (player != president  && player != chancellor) {
+                    player.addAction(new PolicyAction(actions.getLast().getPlayer(),
+                            actions.getLast().getType(), dummyPolicies(2)));
+                }
+            }
+            //Adds the action to the president and chancellor
+            president.addAction(actions.getLast());
+            chancellor.addAction(actions.getLast());
         }
         else {
             //If actions is visible to all players, add the action to all players
@@ -357,5 +416,21 @@ public class Game {
         list.add(first);
         list.add(second);
         return list;
+    }
+
+    /**
+     * Returns a policy list with null values
+     *
+     * @precondition size == 1 || size == 2
+     * @param size size of list
+     * @return policy list with null values
+     */
+    private LinkedList<Policy> dummyPolicies(int size) {
+        assert(size == 1 || size == 2);
+        LinkedList<Policy> dummy = new LinkedList<>();
+        for(int i = 0; i < size; i++) {
+            dummy.add(null);
+        }
+        return dummy;
     }
 }
