@@ -10,15 +10,24 @@ import java.time.Instant;
 import java.util.LinkedList;
 
 /**
- * Runs a game of Secret Hitler
+ * Runs games of Secret Hitler
  */
 public class GameRunner {
 
+    /**
+     * Runs 2^args[0] games, 2^16 if no arg provided
+     *
+     * @param args integer argument which will result in 2^args[0] games run
+     */
     public static void main(String[] args) {
+        int numGames = (int)Math.pow(2, 16);
+
+        if(args.length > 0 && args[0].matches("\\d+")) {
+            numGames = (int)Math.pow(2, Integer.parseInt(args[0]));
+        }
 
         Instant start = Instant.now();
 
-        int numGames = (int)Math.pow(2, 20);
         int numLibWins = 0;
         int count = 0;
         int numRounds = 0;
