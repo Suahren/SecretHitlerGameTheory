@@ -24,6 +24,10 @@ public class Liberal extends Player {
         super(id, game);
         role = Role.LIBERAL;
         party = Party.LIBERAL;
+        playerParties = new Party[7];
+        for(int i = 0; i < playerParties.length; i++) {
+            playerParties[i] = i == this.id ? this.getParty() : null;
+        }
     }
 
     /**

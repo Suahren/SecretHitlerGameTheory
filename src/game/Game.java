@@ -5,6 +5,7 @@ import actions.PolicyAction;
 import actions.PlayerAction;
 import enums.ActionType;
 import enums.Policy;
+import enums.Role;
 import players.Fascist;
 import players.Hitler;
 import players.Liberal;
@@ -78,6 +79,13 @@ public class Game {
         //Matches player IDs to initial player position
         Collections.sort(players);
         Collections.shuffle(deck);
+
+        //Reveals player roles to the fascist players
+        for(Player player : players) {
+            if(player.getRole() == Role.FASCIST) {
+                ((Fascist)player).viewRoles();
+            }
+        }
 
         //Will set president to be the first player once the round starts
         president = players.get(6);
@@ -253,7 +261,7 @@ public class Game {
      * Gets the player index by player ID
      *
      * @param id player ID
-     * @return the player index for the player matching id
+     * @return the player index for the player matching id, -1 if dead
      */
     public int findPlayerIndexById(int id) {
         for(int i = 0; i < players.size(); i++) {

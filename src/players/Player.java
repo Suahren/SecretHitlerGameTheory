@@ -9,6 +9,7 @@ import enums.Policy;
 import enums.Role;
 import game.Game;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -40,11 +41,7 @@ public abstract class Player implements Comparable<Player> {
             knowledge[i] = new LinkedList<Action>();
         }
         suspicions = new int[7];
-        playerParties = new Party[7];
-        for(int i = 0; i < game.players.size(); i++) {
-            suspicions[i] = 0;
-            playerParties[i] = this == game.players.get(i) ? this.getParty() : null;
-        }
+        Arrays.fill(suspicions, 0);
     }
 
     /**

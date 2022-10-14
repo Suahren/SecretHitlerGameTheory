@@ -1,5 +1,7 @@
 package players;
 
+import actions.PolicyAction;
+import enums.ActionType;
 import enums.Party;
 import enums.Policy;
 import enums.Role;
@@ -13,7 +15,7 @@ import java.util.LinkedList;
 public class Fascist extends Player {
 
 
-    private Role[] playerRoles; //Fascist player role knowledge
+    private final Role[] playerRoles; //Fascist player role knowledge
 
     /**
      * Constructor
@@ -26,9 +28,37 @@ public class Fascist extends Player {
         role = Role.FASCIST;
         party = Party.FASCIST;
         playerRoles = new Role[7];
-        for(int i = 0; i < game.players.size(); i++) {
+        playerParties = new Party[7];
+        for(int i = 0; i < playerParties.length; i++) {
+            playerParties[i] = i == this.id ? this.getParty() : null;
+        }
+    }
+
+    /**
+     * Shows player roles to the fascist
+     */
+    public void viewRoles() {
+        for(int i = 0; i < playerRoles.length; i++) {
             playerParties[i] = game.players.get(i).getParty();
             playerRoles[i] = game.players.get(i).getRole();
+        }
+    }
+
+    /**
+     * Chooses the next chancellor
+     * Strategy is to pick the other fascist unless three fascist policies have been played, in
+     *   which case they will pick Hitler
+     *
+     * @precondition the current player is the president
+     * @return a random player index other than the player's or the previous chancellor's
+     */
+    public int chooseChancellor() {
+        assert(this == game.president);
+        if(game.fascistPolicies.size() < 3 && getOtherFascist() != -1) {
+            return getOtherFascist();
+        }
+        else {
+            return getHitler();
         }
     }
 
@@ -106,5 +136,108 @@ public class Fascist extends Player {
                 return policies.get(1);
             }
         }
+    }
+
+    /**
+     * Determines if the player will vote for a president/chancellor combo
+     * Strategy is to vote yes unless five liberal policies have been played and the chancellor is
+     *   not in the fascist party
+     *
+     * @param president the current president
+     * @param chancellor the current chancellor
+     * @return true if the player decides to vote for the combo, false otherwise
+     */
+    public boolean vote(Player president, Player chancellor){
+        return !(game.liberalPolicies.size() == 5 && playerParties[chancellor.getId()].isLiberal);
+    }
+
+    /**
+     * Chooses the next president
+     * Strategy is to pick the other fascist if alive, otherwise Hitler
+     *
+     * @precondition the player is the president
+     * @precondition the third fascist policy was just played by the current chancellor
+     * @return the index of a random player to be selected as the chancellor
+     */
+    public int choosePresident() {
+        assert(this == game.president);
+        assert(game.fascistPolicies.size() == 3 &&
+                game.actions.getLast().getType() == ActionType.PLAY &&
+                ((PolicyAction)game.actions.getLast()).getPolicy() == Policy.FASCIST);
+        return getOtherFascist() != -1 ? getOtherFascist() : getHitler();
+    }
+
+    /**
+     * Shoots a player
+     * Strategy is to shoot a random liberal
+     *
+     * @precondition the player is the president
+     * @precondition the fourth or fifth fascist policy was just played by the current chancellor
+     * @return the killed player
+     */
+    public Player shoot() {
+        assert(this == game.president);
+        assert(game.fascistPolicies.size() == 4 || game.fascistPolicies.size() == 5 &&
+                game.actions.getLast().getType() == ActionType.PLAY &&
+                ((PolicyAction)game.actions.getLast()).getPolicy() == Policy.FASCIST);
+        return game.kill(getRandomLiberal());
+    }
+
+    /**
+     * Determines if a player will agree to veto the two policies passed to the chancellor
+     * Strategy is to veto if both are liberals
+     *
+     * @precondition veto power is enabled
+     * @precondition the player is the current president or current chancellor
+     * @param policies the policies the current president gave to the current chancellor
+     * @return true if the player will veto, false otherwise
+     */
+    public boolean veto(LinkedList<Policy> policies) {
+        assert(game.vetoPower);
+        assert(this == game.president || this == game.chancellor);
+        return policies.get(0).isLiberal && policies.get(1).isLiberal;
+    }
+
+    /**
+     * Gets the other fascist player
+     *
+     * @return the index of the other fascist player, -1 if dead
+     */
+    private int getOtherFascist() {
+        for(int i = 0; i < playerRoles.length; i++) {
+            if(playerRoles[i] == Role.FASCIST && i != this.id) {
+                return game.findPlayerIndexById(i);
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Gets Hitler
+     *
+     * @return the index of Hitler
+     */
+    private int getHitler() {
+        for(int i = 0; i < playerRoles.length; i++) {
+            if(playerRoles[i].isHitler) {
+                return game.findPlayerIndexById(i);
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Gets a random liberal's index
+     *
+     * @return a random liberal's index
+     */
+    private int getRandomLiberal() {
+        LinkedList<Player> liberals = new LinkedList<>();
+        for(Player player : game.players) {
+            if(player.getRole() == Role.LIBERAL) {
+                liberals.add(player);
+            }
+        }
+        return liberals.get((int)(Math.random() * liberals.size())).getPlayerIndex();
     }
 }
