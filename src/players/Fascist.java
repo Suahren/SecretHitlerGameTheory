@@ -14,7 +14,6 @@ import java.util.LinkedList;
  */
 public class Fascist extends Player {
 
-
     private final Role[] playerRoles; //Fascist player role knowledge
 
     /**

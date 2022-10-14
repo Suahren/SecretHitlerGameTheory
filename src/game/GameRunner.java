@@ -18,7 +18,7 @@ public class GameRunner {
 
         Instant start = Instant.now();
 
-        int numGames = 4096 * 4096;
+        int numGames = (int)Math.pow(2, 20);
         int numLibWins = 0;
         int count = 0;
         int numRounds = 0;
